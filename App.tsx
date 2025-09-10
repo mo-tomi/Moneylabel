@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { MoneyItem, MoneyType } from './types';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import Header from './components/Header';
@@ -8,19 +8,12 @@ import MoneyList from './components/MoneyList';
 import EditModal from './components/EditModal';
 import SplitMoneyModal from './components/SplitMoneyModal';
 import AdjustTotalModal from './components/AdjustTotalModal';
-
-const initialData: MoneyItem[] = [
-    { id: 1, label: '食費', amount: 0, type: MoneyType.Wallet, parentId: null },
-    { id: 5, label: '食料品', amount: 10000, type: MoneyType.Wallet, parentId: 1 },
-    { id: 6, label: '外食', amount: 5000, type: MoneyType.Wallet, parentId: 1 },
-    { id: 2, label: '緊急資金', amount: 100000, type: MoneyType.Savings, parentId: null },
-    { id: 3, label: '交通費', amount: 8000, type: MoneyType.Wallet, parentId: null },
-    { id: 4, label: '旅行資金', amount: 50000, type: MoneyType.Savings, parentId: null }
-];
+import InitialSetupModal from './components/InitialSetupModal';
 
 const App: React.FC = () => {
-  const [moneyData, setMoneyData] = useLocalStorage<MoneyItem[]>('moneyData', initialData);
-  const [nextId, setNextId] = useLocalStorage<number>('nextId', 7);
+  const [isSetupComplete, setIsSetupComplete] = useLocalStorage('isSetupComplete', false);
+  const [moneyData, setMoneyData] = useLocalStorage<MoneyItem[]>('moneyData', []);
+  const [nextId, setNextId] = useLocalStorage<number>('nextId', 1);
   
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MoneyItem | null>(null);
@@ -31,6 +24,16 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<MoneyType | 'all'>('all');
   
   const [adjustingType, setAdjustingType] = useState<MoneyType | null>(null);
+
+  const handleInitialSetup = (walletAmount: number, savingsAmount: number) => {
+    const initialItems: MoneyItem[] = [
+      { id: 1, label: '財布', amount: walletAmount, type: MoneyType.Wallet, parentId: null },
+      { id: 2, label: '貯金', amount: savingsAmount, type: MoneyType.Savings, parentId: null },
+    ];
+    setMoneyData(initialItems);
+    setNextId(3);
+    setIsSetupComplete(true);
+  };
 
   const addMoney = (label: string, amount: number, type: MoneyType) => {
     const newItem: MoneyItem = { id: nextId, label, amount, type, parentId: null };
@@ -200,6 +203,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800">
+      <InitialSetupModal isOpen={!isSetupComplete} onSave={handleInitialSetup} />
       <Header />
       <main className="container mx-auto px-4 py-8 max-w-6xl">
         <AddMoneyForm onAdd={addMoney} />
