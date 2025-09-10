@@ -15,7 +15,7 @@ const AIAdvisor: React.FC<AIAdvisorProps> = ({ moneyData }) => {
     setError('');
     setAdvice('');
 
-    const deepSeekApiKey = process.env.DEEPSEEK_KEY;
+    const deepSeekApiKey = import.meta.env.VITE_DEEPSEEK_KEY;
     if (!deepSeekApiKey) {
       let errorMessage = 'エラー: DeepSeek API Keyが設定されていません。';
       if (deepSeekApiKey === undefined) {
