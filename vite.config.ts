@@ -10,6 +10,7 @@ export default defineConfig(({ command }) => {
       
       // 以下は元の設定です
       define: {
+        'process.env.DEEPSEEK_KEY': JSON.stringify(env.DEEPSEEK_KEY)
       },
       resolve: {
         alias: {

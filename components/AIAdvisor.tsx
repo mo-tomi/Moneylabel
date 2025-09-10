@@ -15,17 +15,20 @@ const AIAdvisor: React.FC<AIAdvisorProps> = ({ moneyData }) => {
     setError('');
     setAdvice('');
 
-    if (error) {
-      return <p className="text-red-500">エラー: {error}</p>;
+    if (!process.env.DEEPSEEK_KEY) {
+      setError('DeepSeek API Key is not set. Please check your Netlify environment variables.');
+      setIsLoading(false);
+      return;
     }
 
     try {
       const prompt = `あなたは優秀な家計アドバイザーです。以下の家計データに基づいて、ユーザーに役立つ分析と具体的なアドバイスを提供してください。\n\n家計データ:\n${JSON.stringify(moneyData, null, 2)}\n\n分析とアドバイス:`;
 
-      const response = await fetch('https://safe-ai-chat.vercel.app/api/chat', {
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.DEEPSEEK_KEY}`,
         },
         body: JSON.stringify({
           model: 'deepseek-chat',
@@ -42,7 +45,7 @@ const AIAdvisor: React.FC<AIAdvisorProps> = ({ moneyData }) => {
         throw new Error(`API Error: ${response.status} - ${errorData.message || JSON.stringify(errorData)}`);
       }
 
-      const data = await response.json();
+      const data = await apiResponse.json();
       setAdvice(data.choices[0].message.content);
 
     } catch (err: any) {
