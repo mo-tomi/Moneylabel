@@ -6,7 +6,7 @@ export default defineConfig(({ command }) => {
     const env = loadEnv(command, '.', '');
     return {
       plugins: [react()],
-      base: command === 'build' ? "/Moneylabel/" : "/",
+      base: command === 'build' ? "/" : "/",
       
       // 以下は元の設定です
       define: {
