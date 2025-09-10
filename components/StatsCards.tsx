@@ -1,5 +1,6 @@
 import React from 'react';
 import Icon from './Icon';
+import { useCountUpAnimation } from '../hooks/useCountUpAnimation';
 
 interface StatsCardsProps {
   total: number;
@@ -17,28 +18,32 @@ const StatCard: React.FC<{
   iconName: 'total' | 'wallet' | 'savings';
   color: string;
   onEdit?: () => void;
-}> = ({ title, amount, iconName, color, onEdit }) => (
-  <div className="bg-white rounded-xl card-shadow p-6 flex items-center justify-between">
-    <div className="flex items-center space-x-4">
-      <div className={`p-3 rounded-full ${color}`}>
-        <Icon name={iconName} className="w-8 h-8 text-white" />
+}> = ({ title, amount, iconName, color, onEdit }) => {
+  const animatedAmount = useCountUpAnimation(amount);
+
+  return (
+    <div className="bg-white rounded-xl card-shadow p-6 flex items-center justify-between">
+      <div className="flex items-center space-x-4">
+        <div className={`p-3 rounded-full ${color}`}>
+          <Icon name={iconName} className="w-8 h-8 text-white" />
+        </div>
+        <div>
+          <div className="text-gray-500">{title}</div>
+          <div className="text-2xl font-bold text-gray-800">{formatCurrency(animatedAmount)}</div>
+        </div>
       </div>
-      <div>
-        <div className="text-gray-500">{title}</div>
-        <div className="text-2xl font-bold text-gray-800">{formatCurrency(amount)}</div>
-      </div>
+      {onEdit && (
+        <button
+          onClick={onEdit}
+          title={`${title}の金額を調整`}
+          className="text-gray-400 hover:text-indigo-600 p-2 rounded-full transition-colors"
+        >
+          <Icon name="edit" className="w-5 h-5" />
+        </button>
+      )}
     </div>
-    {onEdit && (
-      <button
-        onClick={onEdit}
-        title={`${title}の金額を調整`}
-        className="text-gray-400 hover:text-indigo-600 p-2 rounded-full transition-colors"
-      >
-        <Icon name="edit" className="w-5 h-5" />
-      </button>
-    )}
-  </div>
-);
+  );
+};
 
 const StatsCards: React.FC<StatsCardsProps> = ({ total, wallet, savings, onEditWallet, onEditSavings }) => {
   return (
