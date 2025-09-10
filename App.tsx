@@ -14,7 +14,8 @@ const App: React.FC = () => {
   const [isSetupComplete, setIsSetupComplete] = useLocalStorage('isSetupComplete', false);
   const [moneyData, setMoneyData] = useLocalStorage<MoneyItem[]>('moneyData', []);
   const [nextId, setNextId] = useLocalStorage<number>('nextId', 1);
-  
+  const [trueWalletTotal, setTrueWalletTotal] = useLocalStorage('trueWalletTotal', 0);
+
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MoneyItem | null>(null);
   
@@ -26,12 +27,15 @@ const App: React.FC = () => {
   const [adjustingType, setAdjustingType] = useState<MoneyType | null>(null);
 
   const handleInitialSetup = (walletAmount: number, savingsAmount: number) => {
-    const initialItems: MoneyItem[] = [
-      { id: 1, label: '財布', amount: walletAmount, type: MoneyType.Wallet, parentId: null },
-      { id: 2, label: '貯金', amount: savingsAmount, type: MoneyType.Savings, parentId: null },
-    ];
-    setMoneyData(initialItems);
-    setNextId(3);
+    setTrueWalletTotal(walletAmount);
+    if (savingsAmount > 0) {
+        const initialSavings: MoneyItem = { id: 1, label: '貯金', amount: savingsAmount, type: MoneyType.Savings, parentId: null };
+        setMoneyData([initialSavings]);
+        setNextId(2);
+    } else {
+        setMoneyData([]);
+        setNextId(1);
+    }
     setIsSetupComplete(true);
   };
 
@@ -114,42 +118,46 @@ const App: React.FC = () => {
       setAdjustingType(null);
   };
 
-  const trueTotals = useMemo(() => {
+  const leafItems = useMemo(() => {
     const itemHasChildren = (itemId: number) => moneyData.some(i => i.parentId === itemId);
-    const leafItems = moneyData.filter(item => !itemHasChildren(item.id));
-    
-    const wallet = leafItems
-      .filter(item => item.type === MoneyType.Wallet)
-      .reduce((sum, item) => sum + item.amount, 0);
-    const savings = leafItems
-      .filter(item => item.type === MoneyType.Savings)
-      .reduce((sum, item) => sum + item.amount, 0);
-    return { wallet, savings };
+    return moneyData.filter(item => !itemHasChildren(item.id));
   }, [moneyData]);
+
+  const labeledWalletAmount = useMemo(() => 
+    leafItems
+        .filter(item => item.type === MoneyType.Wallet)
+        .reduce((sum, item) => sum + item.amount, 0)
+  , [leafItems]);
+
+  const totalSavingsAmount = useMemo(() => 
+      leafItems
+          .filter(item => item.type === MoneyType.Savings)
+          .reduce((sum, item) => sum + item.amount, 0)
+  , [leafItems]);
+
+  const totalAmount = useMemo(() => trueWalletTotal + totalSavingsAmount, [trueWalletTotal, totalSavingsAmount]);
 
   const handleAdjustTotal = (newTotal: number) => {
     if (!adjustingType) return;
-    
-    const currentTotal = trueTotals[adjustingType];
-    const difference = newTotal - currentTotal;
 
-    if (difference === 0) {
-        closeAdjustModal();
-        return;
+    if (adjustingType === MoneyType.Wallet) {
+        setTrueWalletTotal(newTotal);
+    } else { // For Savings
+        const difference = newTotal - totalSavingsAmount;
+        if (difference !== 0) {
+            const newItem: MoneyItem = {
+                id: nextId,
+                label: '金額調整',
+                amount: difference,
+                type: adjustingType,
+                parentId: null,
+            };
+            setMoneyData([...moneyData, newItem]);
+            setNextId(nextId + 1);
+        }
     }
-
-    const newItem: MoneyItem = {
-        id: nextId,
-        label: '金額調整',
-        amount: difference,
-        type: adjustingType,
-        parentId: null,
-    };
-    setMoneyData([...moneyData, newItem]);
-    setNextId(nextId + 1);
     closeAdjustModal();
   };
-
 
   const filteredData = useMemo(() => {
     if (activeTab === 'all') {
@@ -176,20 +184,6 @@ const App: React.FC = () => {
     return moneyData.filter(item => relevantIds.has(item.id));
   }, [moneyData, activeTab]);
 
-  const stats = useMemo(() => {
-    const itemHasChildren = (itemId: number) => filteredData.some(i => i.parentId === itemId);
-    const leafItems = filteredData.filter(item => !itemHasChildren(item.id));
-    
-    const total = leafItems.reduce((sum, item) => sum + item.amount, 0);
-    const wallet = leafItems
-      .filter(item => item.type === MoneyType.Wallet)
-      .reduce((sum, item) => sum + item.amount, 0);
-    const savings = leafItems
-      .filter(item => item.type === MoneyType.Savings)
-      .reduce((sum, item) => sum + item.amount, 0);
-    return { total, wallet, savings };
-  }, [filteredData]);
-
   const editingItemHasChildren = useMemo(() => {
     if (!editingItem) return false;
     return moneyData.some(i => i.parentId === editingItem.id);
@@ -208,9 +202,10 @@ const App: React.FC = () => {
       <main className="container mx-auto px-4 py-8 max-w-6xl">
         <AddMoneyForm onAdd={addMoney} />
         <StatsCards 
-          total={stats.total} 
-          wallet={stats.wallet} 
-          savings={stats.savings}
+          total={totalAmount} 
+          walletTotal={trueWalletTotal}
+          walletLabeled={labeledWalletAmount}
+          savingsTotal={totalSavingsAmount}
           onEditWallet={() => openAdjustModal(MoneyType.Wallet)}
           onEditSavings={() => openAdjustModal(MoneyType.Savings)}
         />
@@ -261,7 +256,7 @@ const App: React.FC = () => {
        <AdjustTotalModal
         isOpen={!!adjustingType}
         type={adjustingType}
-        currentTotal={adjustingType ? trueTotals[adjustingType] : 0}
+        currentTotal={adjustingType === MoneyType.Wallet ? trueWalletTotal : totalSavingsAmount}
         onClose={closeAdjustModal}
         onSave={handleAdjustTotal}
       />
