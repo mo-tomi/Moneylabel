@@ -10,8 +10,6 @@ export default defineConfig(({ command }) => {
       
       // 以下は元の設定です
       define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
       },
       resolve: {
         alias: {

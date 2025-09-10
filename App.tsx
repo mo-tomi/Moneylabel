@@ -9,6 +9,7 @@ import EditModal from './components/EditModal';
 import SplitMoneyModal from './components/SplitMoneyModal';
 import AdjustTotalModal from './components/AdjustTotalModal';
 import InitialSetupModal from './components/InitialSetupModal';
+import AIAdvisor from './components/AIAdvisor';
 
 const App: React.FC = () => {
   const [isSetupComplete, setIsSetupComplete] = useLocalStorage('isSetupComplete', false);
@@ -210,6 +211,8 @@ const App: React.FC = () => {
           onEditSavings={() => openAdjustModal(MoneyType.Savings)}
         />
         
+        <AIAdvisor moneyData={moneyData} />
+
         <div className="mb-6">
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-6" aria-label="Tabs">
