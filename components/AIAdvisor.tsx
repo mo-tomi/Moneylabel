@@ -15,8 +15,16 @@ const AIAdvisor: React.FC<AIAdvisorProps> = ({ moneyData }) => {
     setError('');
     setAdvice('');
 
-    if (!process.env.DEEPSEEK_KEY) {
-      setError('DeepSeek API Key is not set. Please check your Netlify environment variables.');
+    const deepSeekApiKey = process.env.DEEPSEEK_KEY;
+    if (!deepSeekApiKey) {
+      let errorMessage = 'エラー: DeepSeek API Keyが設定されていません。';
+      if (deepSeekApiKey === undefined) {
+        errorMessage += ' (変数が見つかりません)';
+      } else if (deepSeekApiKey === '') {
+        errorMessage += ' (変数は設定されていますが、値が空です)';
+      }
+      errorMessage += ' Netlifyの環境変数をご確認ください。';
+      setError(errorMessage);
       setIsLoading(false);
       return;
     }
