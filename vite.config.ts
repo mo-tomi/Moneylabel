@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
     return {
       // ↓↓↓ ここから2行追加します ↓↓↓
       plugins: [react()],
-      base: "/Moneylabel/", 
+      base: "./", 
       // ↑↑↑ ここまで追加 ↑↑↑
       
       // 以下は元の設定です
